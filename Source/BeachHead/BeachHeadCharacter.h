@@ -57,6 +57,8 @@ public:
 
 	bool ServerEquipWeapon_Validate(ABeachHeadWeapon* Weapon);
 
+	FRotator GetCameraRotation();
+
 private:
 	/*--------------------------------PRIVATE PROPERTIES-------------------------------------*/
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)

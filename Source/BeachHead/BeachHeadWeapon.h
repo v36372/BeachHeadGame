@@ -26,11 +26,6 @@ UCLASS(ABSTRACT, Blueprintable)
 class BEACHHEAD_API ABeachHeadWeapon : public AActor
 {
 	GENERATED_BODY()
-	/* The character socket to store this item at. */
-	EInventorySlot StorageSlot;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
-	USoundCue* FireSound;
 public:	
 	// Sets default values for this actor's properties
 	ABeachHeadWeapon();
@@ -70,4 +65,16 @@ protected:
 	UFUNCTION()
 	void OnRep_MyPawn();
 
+	/* The character socket to store this item at. */
+	EInventorySlot StorageSlot;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundCue* FireSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+		float FireRate;
+
+	/** Gun muzzle's offset from the characters location */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	FVector GunOffset;
 };

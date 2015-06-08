@@ -33,14 +33,16 @@ void ABeachHeadWeapon::OnEnterInventory(ABeachHeadCharacter* NewOwner)
 
 void ABeachHeadWeapon::SimulateWeaponFire()
 {
-	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Green, TEXT("ABeachHeadWeapon::SimulateWeaponFire"));
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Green, TEXT("ABeachHeadWeapon::SimulateWeaponFire"));
+	// try and fire a projectile
+
 	PlayWeaponSound(FireSound);
 }
 
 UAudioComponent* ABeachHeadWeapon::PlayWeaponSound(USoundCue* SoundToPlay)
 {
 	UAudioComponent* AC = nullptr;
-	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadWeapon::PlayWeaponSound123123123123123"));
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadWeapon::PlayWeaponSound123123123123123"));
 	if (SoundToPlay && MyPawn)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Yellow, TEXT("ABeachHeadWeapon::PlayWeaponSound"));
@@ -84,6 +86,7 @@ void ABeachHeadWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void ABeachHeadWeapon::StartFire()
 {
 	SimulateWeaponFire();
+	FireWeapon();
 }
 
 void ABeachHeadWeapon::StopFire()
