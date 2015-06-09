@@ -50,11 +50,12 @@ void ABulletProjectile::Tick( float DeltaTime )
 
 void ABulletProjectile::OnHit(AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-
+	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadProjectile::OnHit"));
 	// Only add impulse and destroy projectile if we hit a physics
 	if ((OtherActor != NULL) && (OtherActor != this) && (OtherComp != NULL) && OtherComp->IsSimulatingPhysics())
 	{
 		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
+		GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadProjectile::OnHit1231212423234234"));
 		Destroy();
 	}
 }

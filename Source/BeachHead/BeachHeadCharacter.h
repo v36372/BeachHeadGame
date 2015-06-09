@@ -58,6 +58,7 @@ public:
 	bool ServerEquipWeapon_Validate(ABeachHeadWeapon* Weapon);
 
 	FRotator GetCameraRotation();
+	bool CanFire();
 
 private:
 	/*--------------------------------PRIVATE PROPERTIES-------------------------------------*/
@@ -79,4 +80,10 @@ private:
 	void StartWeaponFire();
 
 	void StopWeaponFire();
+
+	bool IsAlive() const;
+
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "PlayerCondition", Replicated)
+	float Health;
 };

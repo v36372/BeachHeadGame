@@ -8,7 +8,13 @@ ABeachHeadWeapon::ABeachHeadWeapon()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
 	StorageSlot = EInventorySlot::Primary;
+	CurrentState = EWeaponState::Idle;
+	
+	bIsEquipped = false;
+	LastFireTime = 0;
+	ShotsPerMinute = 60;
 }
 
 // Called when the game starts or when spawned
@@ -63,6 +69,20 @@ void ABeachHeadWeapon::SetOwningPawn(ABeachHeadCharacter* NewOwner)
 	}
 }
 
+void ABeachHeadWeapon::OnEquip()
+{
+	bPendingEquip = true;
+	DetermineWeaponState();
+	OnEquipFinished();
+}
+
+void ABeachHeadWeapon::OnEquipFinished()
+{
+	bIsEquipped = true;
+	bPendingEquip = false;
+	DetermineWeaponState();
+}
+
 void ABeachHeadWeapon::OnRep_MyPawn()
 {
 	if (MyPawn)
@@ -83,13 +103,225 @@ void ABeachHeadWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(ABeachHeadWeapon, MyPawn);
 }
 
+bool ABeachHeadWeapon::ServerHandleFiring_Validate()
+{
+	return true;
+}
+
+
+void ABeachHeadWeapon::ServerHandleFiring_Implementation()
+{
+	HandleFiring();
+}
+
+bool ABeachHeadWeapon::ServerStartFire_Validate()
+{
+	return true;
+}
+
+void ABeachHeadWeapon::ServerStartFire_Implementation()
+{
+	StartFire();
+}
+
 void ABeachHeadWeapon::StartFire()
 {
-	SimulateWeaponFire();
-	FireWeapon();
+	if (Role < ROLE_Authority)
+	{
+		ServerStartFire();
+	}
+
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		DetermineWeaponState();
+	}
+}
+
+void ABeachHeadWeapon::DetermineWeaponState()
+{
+	EWeaponState NewState = EWeaponState::Idle;
+
+	if (bIsEquipped)
+	{
+		/*if (bPendingReload)
+		{
+			if (CanReload())
+			{
+				NewState = EWeaponState::Reloading;
+			}
+			else
+			{
+				NewState = CurrentState;
+			}
+		}
+		else*/
+		if (bWantsToFire && CanFire())
+		{
+			NewState = EWeaponState::Firing;
+		}
+	}
+	else if (bPendingEquip)
+	{
+		NewState = EWeaponState::Equipping;
+	}
+
+	SetWeaponState(NewState);
+}
+
+void ABeachHeadWeapon::SetWeaponState(EWeaponState NewState)
+{
+	const EWeaponState PrevState = CurrentState;
+
+	if (PrevState == EWeaponState::Firing && NewState != EWeaponState::Firing)
+	{
+		OnBurstFinished();
+	}
+
+	CurrentState = NewState;
+
+	if (PrevState != EWeaponState::Firing && NewState == EWeaponState::Firing)
+	{
+		OnBurstStarted();
+	}
 }
 
 void ABeachHeadWeapon::StopFire()
 {
-	
+	if (Role < ROLE_Authority)
+	{
+		ServerStopFire();
+	}
+
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		DetermineWeaponState();
+	}
+}
+
+bool ABeachHeadWeapon::ServerStopFire_Validate()
+{
+	return true;
+}
+
+
+void ABeachHeadWeapon::ServerStopFire_Implementation()
+{
+	StopFire();
+}
+
+void ABeachHeadWeapon::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	/* Setup configuration */
+	TimeBetweenShots = 60.0f / ShotsPerMinute;
+}
+
+void ABeachHeadWeapon::OnBurstStarted()
+{
+	// Start firing, can be delayed to satisfy TimeBetweenShots
+	UE_LOG(LogTemp, Warning, TEXT("ABeachHeadWepaon::OnBurstStarted"));
+	const float GameTime = GetWorld()->GetTimeSeconds();
+	if (LastFireTime > 0 && TimeBetweenShots > 0.0f &&
+		LastFireTime + TimeBetweenShots > GameTime)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABeachHeadWepaon::SetTimerHandleFiring"));
+		GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &ABeachHeadWeapon::HandleFiring, LastFireTime + TimeBetweenShots - GameTime, false);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ABeachHeadWepaon::HandleFiring"));
+		HandleFiring();
+	}
+}
+
+void ABeachHeadWeapon::OnBurstFinished()
+{
+	BurstCounter = 0;
+
+	if (GetNetMode() != NM_DedicatedServer)
+	{
+		//StopSimulatingWeaponFire();
+	}
+
+	GetWorldTimerManager().ClearTimer(TimerHandle_HandleFiring);
+	bRefiring = false;
+}
+
+void ABeachHeadWeapon::OnRep_BurstCounter()
+{
+	if (BurstCounter > 0)
+	{
+		SimulateWeaponFire();
+	}
+	else
+	{
+		//StopSimulatingWeaponFire();
+	}
+}
+
+void ABeachHeadWeapon::HandleFiring()
+{
+	if (CanFire())
+	{
+		if (GetNetMode() != NM_DedicatedServer)
+		{
+			SimulateWeaponFire();
+		}
+
+		if (MyPawn && MyPawn->IsLocallyControlled())
+		{
+			FireWeapon();
+
+			// Update firing FX on remote clients if this is called on server
+			//BurstCounter++;
+		}
+	}
+	/*else if (CanReload())
+	{
+		StartReload();
+	}*/
+	else if (MyPawn && MyPawn->IsLocallyControlled())
+	{
+		//if (GetCurrentAmmo() == 0 && !bRefiring)
+		//{
+		//	PlayWeaponSound(OutOfAmmoSound);
+		//}
+
+		///* Reload after firing last round */
+		//if (CurrentAmmoInClip <= 0 && CanReload())
+		//{
+		//	StartReload();
+		//}
+
+		/* Stop weapon fire FX, but stay in firing state */
+		if (BurstCounter > 0)
+		{
+			OnBurstFinished();
+		}
+	}
+
+	if (MyPawn && MyPawn->IsLocallyControlled())
+	{
+		if (Role < ROLE_Authority)
+		{
+			ServerHandleFiring();
+		}
+
+		/* Retrigger HandleFiring on a delay for automatic weapons */
+		bRefiring = (CurrentState == EWeaponState::Firing && TimeBetweenShots > 0.0f);
+		if (bRefiring)
+		{
+			GetWorldTimerManager().SetTimer(TimerHandle_HandleFiring, this, &ABeachHeadWeapon::HandleFiring, TimeBetweenShots, false);
+		}
+	}
+
+	LastFireTime = GetWorld()->GetTimeSeconds();
+}
+
+bool ABeachHeadWeapon::CanFire()
+{
+	return MyPawn->CanFire();
 }

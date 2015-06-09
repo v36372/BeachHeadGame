@@ -26,6 +26,11 @@ UCLASS(ABSTRACT, Blueprintable)
 class BEACHHEAD_API ABeachHeadWeapon : public AActor
 {
 	GENERATED_BODY()
+	virtual void PostInitializeComponents() override;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ShotsPerMinute;
+
 public:	
 	// Sets default values for this actor's properties
 	ABeachHeadWeapon();
@@ -46,8 +51,68 @@ public:
 	/* Set the weapon's owning pawn */
 	void SetOwningPawn(ABeachHeadCharacter* NewOwner);
 
+	void OnEquip();
+	//virtual void OnUnEquip();
+
+	bool CanFire();
+private:
+	UFUNCTION()
+	void OnRep_BurstCounter();
+
+public:
 	void StartFire();
 	void StopFire();
+
+private:
+	bool bRefiring;
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerHandleFiring();
+
+	void ServerHandleFiring_Implementation();
+
+	bool ServerHandleFiring_Validate();
+
+	EWeaponState CurrentState;
+
+	void SetWeaponState(EWeaponState NewState);
+
+	void DetermineWeaponState();
+
+	virtual void HandleFiring();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerStartFire();
+
+	void ServerStartFire_Implementation();
+
+	bool ServerStartFire_Validate();
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerStopFire();
+
+	void ServerStopFire_Implementation();
+
+	bool ServerStopFire_Validate();
+
+	FTimerHandle TimerHandle_HandleFiring;
+
+	bool bWantsToFire;
+	bool bIsEquipped;
+	bool bPendingEquip;
+
+	void OnEquipFinished();
+
+	void OnBurstStarted();
+
+	void OnBurstFinished();
+
+	float LastFireTime;
+	/* Time between shots for repeating fire */
+	float TimeBetweenShots;
+
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_BurstCounter)
+	int32 BurstCounter;
 
 protected:
 	/** weapon mesh: 3rd person view */
@@ -69,10 +134,10 @@ protected:
 	EInventorySlot StorageSlot;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
-		USoundCue* FireSound;
+	USoundCue* FireSound;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-		float FireRate;
+	float FireRate;
 
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)

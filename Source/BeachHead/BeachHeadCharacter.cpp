@@ -11,6 +11,9 @@ ABeachHeadCharacter::ABeachHeadCharacter()
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+
+	Health = 100;
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -49,7 +52,7 @@ void ABeachHeadCharacter::Tick( float DeltaTime )
 void ABeachHeadCharacter::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	Super::SetupPlayerInputComponent(InputComponent);
-	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("set up input"));
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("set up input"));
 	InputComponent->BindAxis("Turn", this, &APawn::AddControllerYawInput);
 	InputComponent->BindAxis("LookUp", this, &APawn::AddControllerPitchInput);
 
@@ -59,13 +62,13 @@ void ABeachHeadCharacter::SetupPlayerInputComponent(class UInputComponent* Input
 
 void ABeachHeadCharacter::OnStartFire()
 {
-	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::OnStartFire"));
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::OnStartFire"));
 	StartWeaponFire();
 }
 
 void ABeachHeadCharacter::OnStopFire()
 {
-	GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::OnStopFire"));
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::OnStopFire"));
 	StopWeaponFire();
 }
 
@@ -77,7 +80,7 @@ void ABeachHeadCharacter::StartWeaponFire()
 		if (CurrentWeapon)
 		{
 			CurrentWeapon->StartFire();
-			GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::StartWeaponFire"));
+			//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::StartWeaponFire"));
 		}
 	}
 }
@@ -89,8 +92,8 @@ void ABeachHeadCharacter::StopWeaponFire()
 		bWantsToFire = false;
 		if (CurrentWeapon)
 		{
-			//CurrentWeapon->StopFire();
-			GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::StopWeaponFire"));
+			CurrentWeapon->StopFire();
+			//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadCharacter::StopWeaponFire"));
 		}
 	}
 }
@@ -104,6 +107,12 @@ void ABeachHeadCharacter::SetCurrentWeapon(class ABeachHeadWeapon* NewWeapon, cl
 {
 	CurrentWeapon = NewWeapon;
 
+	if (NewWeapon)
+	{
+		NewWeapon->SetOwningPawn(this);
+		/* Only play equip animation when we already hold an item in hands */
+		NewWeapon->OnEquip();
+	}
 }
 
 void ABeachHeadCharacter::SpawnDefaultInventory()
@@ -185,4 +194,14 @@ void ABeachHeadCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 FRotator ABeachHeadCharacter::GetCameraRotation()
 {
 	return BeachHeadCameraComponent->GetComponentRotation();
+}
+
+bool ABeachHeadCharacter::CanFire()
+{
+	return IsAlive();
+}
+
+bool ABeachHeadCharacter::IsAlive() const
+{
+	return Health > 0;
 }
