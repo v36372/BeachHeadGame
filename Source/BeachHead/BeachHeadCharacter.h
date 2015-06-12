@@ -3,6 +3,7 @@
 #pragma once
 
 #include "BeachHead.h"
+#include "BeachHeadAIPawn.h"
 #include "GameFramework/Character.h"
 #include "BeachHeadCharacter.generated.h"
 
@@ -60,6 +61,14 @@ public:
 	FRotator GetCameraRotation();
 	bool CanFire();
 
+	/*Max distance to use/focus on actors. */
+	UPROPERTY(EditDefaultsOnly, Category = "ObjectInteraction")
+	float MaxUseDistance;
+
+	bool bHasNewFocus;
+
+	class ABeachHeadAIPawn* GetEnemyInSight();
+	class ABeachHeadAIPawn* FocusedEnemy;
 private:
 	/*--------------------------------PRIVATE PROPERTIES-------------------------------------*/
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)

@@ -31,6 +31,8 @@ ABeachHeadCharacter::ABeachHeadCharacter()
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
 
+	MaxUseDistance = 500;
+	//FocusedEnemy = nullptr;
 	// Note: The ProjectileClass and the skeletal mesh/anim blueprints for Mesh1P are set in the
 	// derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 }
@@ -46,6 +48,35 @@ void ABeachHeadCharacter::BeginPlay()
 void ABeachHeadCharacter::Tick( float DeltaTime )
 {
 	Super::Tick( DeltaTime );
+
+	if (Controller && Controller->IsLocalController())
+	{
+		ABeachHeadAIPawn* enemy = GetEnemyInSight();
+
+		// End Focus
+		if (FocusedEnemy != enemy)
+		{
+			if (FocusedEnemy)
+			{
+				FocusedEnemy->OnEndFocus();
+			}
+
+			bHasNewFocus = true;
+		}
+
+		// Assign new Focus
+		FocusedEnemy = enemy;
+
+		// Start Focus.
+		if (enemy)
+		{
+			if (bHasNewFocus)
+			{
+				enemy->OnBeginFocus();
+				bHasNewFocus = false;
+			}
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -204,4 +235,32 @@ bool ABeachHeadCharacter::CanFire()
 bool ABeachHeadCharacter::IsAlive() const
 {
 	return Health > 0;
+}
+
+ABeachHeadAIPawn* ABeachHeadCharacter::GetEnemyInSight()
+{
+	FVector CamLoc;
+	FRotator CamRot;
+
+	if (Controller == nullptr)
+		return nullptr;
+
+	Controller->GetPlayerViewPoint(CamLoc, CamRot);
+	const FVector TraceStart = CamLoc;
+	const FVector Direction = CamRot.Vector();
+	const FVector TraceEnd = TraceStart + (Direction * MaxUseDistance);
+
+	FCollisionQueryParams TraceParams(TEXT("TraceUsableActor"), true, this);
+	TraceParams.bTraceAsyncScene = true;
+	TraceParams.bReturnPhysicalMaterial = false;
+
+	/* Not tracing complex uses the rough collision instead making tiny objects easier to select. */
+	TraceParams.bTraceComplex = false;
+
+	FHitResult Hit(ForceInit);
+	GetWorld()->LineTraceSingle(Hit, TraceStart, TraceEnd, ECC_Visibility, TraceParams);
+
+	//DrawDebugLine(GetWorld(), TraceStart, TraceEnd, FColor::Red, false, 1.0f);
+
+	return Cast<ABeachHeadAIPawn>(Hit.GetActor());
 }
