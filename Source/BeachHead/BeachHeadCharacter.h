@@ -36,8 +36,7 @@ public:
 
 	void AddWeapon(class ABeachHeadWeapon* Weapon);
 	/*--------------------------------PUBLIC PROPERTIES-------------------------------------*/
-	//UPROPERTY(Transient, ReplicatedUsing = OnRep_CurrentWeapon)
-	UPROPERTY()
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_CurrentWeapon)
 	class ABeachHeadWeapon* CurrentWeapon;
 
 	class ABeachHeadWeapon* PreviousWeapon;
