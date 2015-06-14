@@ -3,19 +3,19 @@
 #pragma once
 
 #include "BeachHead.h"
-#include "BeachHeadAIPawn.h"
+#include "BeachHeadBaseCharacter.h"
 #include "GameFramework/Character.h"
 #include "BeachHeadCharacter.generated.h"
 
 UCLASS()
-class BEACHHEAD_API ABeachHeadCharacter : public ACharacter
+class BEACHHEAD_API ABeachHeadCharacter : public ABeachHeadBaseCharacter
 {
 	GENERATED_BODY()
 
 public:
 	/*--------------------------------PUBLIC METHODS-------------------------------------*/
 	// Sets default values for this character's properties
-	ABeachHeadCharacter();
+	ABeachHeadCharacter(const class FObjectInitializer& ObjectInitializer);
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -59,15 +59,30 @@ public:
 
 	FRotator GetCameraRotation();
 	bool CanFire();
-
 	/*Max distance to use/focus on actors. */
 	UPROPERTY(EditDefaultsOnly, Category = "ObjectInteraction")
 	float MaxUseDistance;
 
-	bool bHasNewFocus;
+	void ABeachHeadCharacter::Suicide()
+	{
+		KilledBy(this);
+	}
+	
 
-	class ABeachHeadAIPawn* GetEnemyInSight();
-	class ABeachHeadAIPawn* FocusedEnemy;
+	void ABeachHeadCharacter::KilledBy(class APawn* EventInstigator)
+	{
+		if (Role == ROLE_Authority && !bIsDying)
+		{
+			AController* Killer = nullptr;
+			if (EventInstigator != nullptr)
+			{
+				Killer = EventInstigator->Controller;
+				LastHitBy = nullptr;
+			}
+
+			Die(Health, FDamageEvent(UDamageType::StaticClass()), Killer, nullptr);
+		}
+	}
 private:
 	/*--------------------------------PRIVATE PROPERTIES-------------------------------------*/
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
@@ -77,7 +92,7 @@ private:
 	class UCameraComponent* BeachHeadCameraComponent;
 
 	bool bWantsToFire;
-
+	float Health;
 	/*--------------------------------PRIVATE METHODS-------------------------------------*/
 	/* Mapped to input */
 	void OnStartFire();
@@ -88,10 +103,4 @@ private:
 	void StartWeaponFire();
 
 	void StopWeaponFire();
-
-	bool IsAlive() const;
-
-protected:
-	UPROPERTY(EditDefaultsOnly, Category = "PlayerCondition", Replicated)
-	float Health;
 };

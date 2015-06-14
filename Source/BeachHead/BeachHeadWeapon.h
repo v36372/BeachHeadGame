@@ -16,11 +16,6 @@ enum class EWeaponState
 	Reloading
 };
 
-enum class EInventorySlot
-{
-	Primary
-};
-
 //UCLASS(ABSTRACT, Blueprintable)
 UCLASS(ABSTRACT, Blueprintable)
 class BEACHHEAD_API ABeachHeadWeapon : public AActor
