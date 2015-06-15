@@ -39,4 +39,10 @@ private:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	class UStaticMeshComponent* ProjectileMesh;
+
+	UPROPERTY(EditDefaultsOnly)
+	float HitDamage;
+
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UDamageType> DamageType;
 };

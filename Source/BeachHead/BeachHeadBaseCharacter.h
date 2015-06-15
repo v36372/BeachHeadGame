@@ -151,6 +151,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "PlayerCondition")
 	bool IsAlive() const;
 
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "PlayerCondition", Replicated)
 	float Health;
@@ -160,7 +161,6 @@ protected:
 	/************************************************************************/
 
 	/* Take damage & handle death */
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
 	virtual bool CanDie(float KillingDamage, FDamageEvent const& DamageEvent, AController* Killer, AActor* DamageCauser) const;
 

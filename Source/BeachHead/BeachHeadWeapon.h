@@ -28,7 +28,7 @@ class BEACHHEAD_API ABeachHeadWeapon : public AActor
 
 public:	
 	// Sets default values for this actor's properties
-	ABeachHeadWeapon();
+	ABeachHeadWeapon(const class FObjectInitializer& PCIP);
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -54,9 +54,21 @@ private:
 	UFUNCTION()
 	void OnRep_BurstCounter();
 
+	UPROPERTY(EditDefaultsOnly)
+	FName MuzzleAttachPoint;
 public:
 	void StartFire();
 	void StopFire();
+
+	FVector GetAdjustedAim() const;
+
+
+	FVector GetCameraDamageStartLocation(const FVector& AimDir) const;
+
+
+	FHitResult WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const;
+
+	FVector GetMuzzleLocation() const;
 
 private:
 	bool bRefiring;

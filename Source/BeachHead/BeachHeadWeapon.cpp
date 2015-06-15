@@ -1,12 +1,24 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "BeachHead.h"
 #include "BeachHeadWeapon.h"
-
+#include "BeachHeadPlayerController.h"
 
 // Sets default values
-ABeachHeadWeapon::ABeachHeadWeapon()
+ABeachHeadWeapon::ABeachHeadWeapon(const class FObjectInitializer& PCIP)
+: Super(PCIP)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	
+	Mesh = PCIP.CreateDefaultSubobject<USkeletalMeshComponent>(this, TEXT("WeaponMesh3P"));
+	Mesh->MeshComponentUpdateFlag = EMeshComponentUpdateFlag::OnlyTickPoseWhenRendered;
+	Mesh->bChartDistanceFactor = true;
+	Mesh->bReceivesDecals = true;
+	Mesh->CastShadow = true;
+	Mesh->SetCollisionObjectType(ECC_WorldDynamic);
+	Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	Mesh->SetCollisionResponseToAllChannels(ECR_Ignore);
+	Mesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	RootComponent = Mesh;
 	PrimaryActorTick.bCanEverTick = true;
 
 	StorageSlot = EInventorySlot::Primary;
@@ -15,6 +27,9 @@ ABeachHeadWeapon::ABeachHeadWeapon()
 	bIsEquipped = false;
 	LastFireTime = 0;
 	ShotsPerMinute = 60;
+
+	MuzzleAttachPoint = TEXT("MuzzleFlashSocket");
+
 }
 
 // Called when the game starts or when spawned
@@ -324,4 +339,61 @@ void ABeachHeadWeapon::HandleFiring()
 bool ABeachHeadWeapon::CanFire()
 {
 	return MyPawn->CanFire();
+}
+
+FVector ABeachHeadWeapon::GetAdjustedAim() const
+{
+	ABeachHeadPlayerController* const PC = Instigator ? Cast<ABeachHeadPlayerController>(Instigator->Controller) : nullptr;
+	FVector FinalAim = FVector::ZeroVector;
+
+	if (PC)
+	{
+		FVector CamLoc;
+		FRotator CamRot;
+		PC->GetPlayerViewPoint(CamLoc, CamRot);
+
+		FinalAim = CamRot.Vector();
+	}
+	else if (Instigator)
+	{
+		FinalAim = Instigator->GetBaseAimRotation().Vector();
+	}
+
+	return FinalAim;
+}
+
+
+FVector ABeachHeadWeapon::GetCameraDamageStartLocation(const FVector& AimDir) const
+{
+	ABeachHeadPlayerController* PC = MyPawn ? Cast<ABeachHeadPlayerController>(MyPawn->Controller) : nullptr;
+	FVector OutStartTrace = FVector::ZeroVector;
+
+	if (PC)
+	{
+		FRotator DummyRot;
+		PC->GetPlayerViewPoint(OutStartTrace, DummyRot);
+
+		// Adjust trace so there is nothing blocking the ray between the camera and the pawn, and calculate distance from adjusted start
+		OutStartTrace = OutStartTrace + AimDir * (FVector::DotProduct((Instigator->GetActorLocation() - OutStartTrace), AimDir));
+	}
+
+	return OutStartTrace;
+}
+
+
+FHitResult ABeachHeadWeapon::WeaponTrace(const FVector& TraceFrom, const FVector& TraceTo) const
+{
+	FCollisionQueryParams TraceParams(TEXT("WeaponTrace"), true, Instigator);
+	TraceParams.bTraceAsyncScene = true;
+	TraceParams.bReturnPhysicalMaterial = true;
+
+	FHitResult Hit(ForceInit);
+	GetWorld()->LineTraceSingle(Hit, TraceFrom, TraceTo, COLLISION_WEAPON, TraceParams);
+
+	return Hit;
+}
+
+FVector ABeachHeadWeapon::GetMuzzleLocation() const
+{
+	return Mesh->GetSocketLocation(MuzzleAttachPoint);
 }

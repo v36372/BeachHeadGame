@@ -164,7 +164,22 @@ FString ABeachHead_GameMode::InitNewPlayer(class APlayerController* NewPlayerCon
 
 float ABeachHead_GameMode::ModifyDamage(float Damage, AActor* DamagedActor, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) const
 {
-	return 0.0;
+	float ActualDamage = Damage;
+
+	ABeachHeadBaseCharacter* DamagedPawn = Cast<ABeachHeadBaseCharacter>(DamagedActor);
+	if (DamagedPawn && EventInstigator)
+	{
+		ABeachHeadPlayerState* DamagedPlayerState = Cast<ABeachHeadPlayerState>(DamagedPawn->PlayerState);
+		ABeachHeadPlayerState* InstigatorPlayerState = Cast<ABeachHeadPlayerState>(EventInstigator->PlayerState);
+
+		// Check for friendly fire
+		if (!CanDealDamage(InstigatorPlayerState, DamagedPlayerState))
+		{
+			ActualDamage = 0.f;
+		}
+	}
+
+	return ActualDamage;
 }
 
 

@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BeachHead.h"
+#include "BeachHeadAICharacter.h"
 #include "BulletProjectile.h"
 
 
@@ -32,6 +33,7 @@ ABulletProjectile::ABulletProjectile()
 
 	// Die after 3 seconds by default
 	InitialLifeSpan = 3.0f;
+	HitDamage = 26;
 }
 
 // Called when the game starts or when spawned
@@ -57,6 +59,18 @@ void ABulletProjectile::OnHit(AActor* OtherActor, UPrimitiveComponent* OtherComp
 		OtherComp->AddImpulseAtLocation(GetVelocity() * 100.0f, GetActorLocation());
 		UE_LOG(LogTemp, Warning, TEXT("ABulletProjectile::OnHit 123123123123"));
 		Destroy();
+	}
+
+	if (Cast<ABeachHeadAICharacter>(OtherActor))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("bi ban trung rui"));
+		FPointDamageEvent PointDmg;
+		PointDmg.DamageTypeClass = DamageType;
+		PointDmg.HitInfo = Hit;
+		PointDmg.ShotDirection = NormalImpulse;
+		PointDmg.Damage = HitDamage;
+
+		Cast<ABeachHeadAICharacter>(OtherActor)->TakeDamage(PointDmg.Damage, PointDmg, Cast<ABeachHeadAICharacter>(OtherActor)->Controller, this);
 	}
 }
 
