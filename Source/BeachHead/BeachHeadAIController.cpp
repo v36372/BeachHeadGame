@@ -17,10 +17,10 @@ ABeachHeadAIController::ABeachHeadAIController(const class FObjectInitializer& O
 
 	/* Match with the AI/ZombieBlackboard */
 	TargetLocationKeyName = "TargetLocation";
-	PatrolLocationKeyName = "PatrolLocation";
-	CurrentWaypointKeyName = "CurrentWaypoint";
 	BotTypeKeyName = "BotType";
 	TargetEnemyKeyName = "TargetEnemy";
+	SelfActorKeyName = "SelfActor";
+	SelfLocationKeyName = "SelfLocation";
 
 	/* Initializes PlayerState so we can assign a team index to AI */
 	bWantsPlayerState = true;
@@ -46,6 +46,13 @@ void ABeachHeadAIController::Possess(class APawn* InPawn)
 	}
 }
 
+void ABeachHeadAIController::SetBlackboardBotType(EBotBehaviorType NewType)
+{
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsEnum(BotTypeKeyName, (uint8)NewType);
+	}
+}
 
 void ABeachHeadAIController::SetMoveToTarget(APawn* Pawn)
 {
@@ -60,11 +67,33 @@ void ABeachHeadAIController::SetMoveToTarget(APawn* Pawn)
 	}
 }
 
+void ABeachHeadAIController::InitSelf(APawn* Pawn)
+{
+
+	if (BlackboardComp)
+	{
+		SetSelfActor(Pawn);
+
+		if (Pawn)
+		{
+			BlackboardComp->SetValueAsVector(SelfLocationKeyName, Pawn->GetActorLocation());
+		}
+	}
+}
+
 void ABeachHeadAIController::SetTargetEnemy(APawn* NewTarget)
 {
 	if (BlackboardComp)
 	{
 		BlackboardComp->SetValueAsObject(TargetEnemyKeyName, NewTarget);
+	}
+}
+
+void ABeachHeadAIController::SetSelfActor(APawn* NewTarget)
+{
+	if (BlackboardComp)
+	{
+		BlackboardComp->SetValueAsObject(SelfActorKeyName, NewTarget);
 	}
 }
 
@@ -78,11 +107,12 @@ ABeachHeadBaseCharacter* ABeachHeadAIController::GetTargetEnemy()
 	return nullptr;
 }
 
-
-void ABeachHeadAIController::SetBlackboardBotType(EBotBehaviorType NewType)
+ABeachHeadBaseCharacter* ABeachHeadAIController::GetSelfActor()
 {
 	if (BlackboardComp)
 	{
-		BlackboardComp->SetValueAsEnum(BotTypeKeyName, (uint8)NewType);
+		return Cast<ABeachHeadBaseCharacter>(BlackboardComp->GetValueAsObject(SelfActorKeyName));
 	}
+
+	return nullptr;
 }

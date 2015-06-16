@@ -30,10 +30,10 @@ class BEACHHEAD_API ABeachHeadAIController : public AAIController
 	FName TargetLocationKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	FName PatrolLocationKeyName;
+	FName SelfLocationKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
-	FName CurrentWaypointKeyName;
+	FName SelfActorKeyName;
 
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	FName BotTypeKeyName;
@@ -43,6 +43,7 @@ public:
 	//ASBotWaypoint* GetWaypoint();
 
 	ABeachHeadBaseCharacter* GetTargetEnemy();
+	ABeachHeadBaseCharacter* GetSelfActor();
 
 	void SetMoveToTarget(APawn* Pawn);
 
@@ -51,6 +52,10 @@ public:
 	void SetTargetEnemy(APawn* NewTarget);
 
 	void SetBlackboardBotType(EBotBehaviorType NewType);
+
+	void InitSelf(APawn* Pawn);
+
+	void SetSelfActor(APawn* Pawn);
 
 	/** Returns BehaviorComp subobject **/
 	FORCEINLINE UBehaviorTreeComponent* GetBehaviorComp() const { return BehaviorComp; }
