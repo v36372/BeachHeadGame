@@ -20,15 +20,28 @@ void ABeachHeadMainWeapon::FireWeapon()
 	if (ProjectileClass != NULL)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Green, TEXT("ABeachHeadMainWeapon::FireWeapon12341234213423412341232345234"));
-		const FRotator SpawnRotation = MyPawn->GetCameraRotation();
 		// MuzzleOffset is in camera space, so transform it to world space before offsetting from the character location to find the final muzzle position
-		const FVector SpawnLocation = MyPawn->GetActorLocation() + SpawnRotation.RotateVector(GunOffset);
-
-		UWorld* const World = GetWorld();
-		if (World != NULL)
+		if (Cast<ABeachHeadAICharacter>(MyPawn))
 		{
-			// spawn the projectile at the muzzle
-			World->SpawnActor<ABulletProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			const FRotator SpawnRotation = MyPawn->GetActorRotation();
+			const FVector SpawnLocation = MyPawn->GetActorLocation() + SpawnRotation.RotateVector(GunOffset);
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				// spawn the projectile at the muzzle
+				World->SpawnActor<ABulletProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			}
+		}
+		else
+		{
+			const FRotator SpawnRotation = MyPawn->GetCameraRotation();
+			const FVector SpawnLocation = MyPawn->GetActorLocation() + SpawnRotation.RotateVector(GunOffset);
+			UWorld* const World = GetWorld();
+			if (World != NULL)
+			{
+				// spawn the projectile at the muzzle
+				World->SpawnActor<ABulletProjectile>(ProjectileClass, SpawnLocation, SpawnRotation);
+			}
 		}
 	}
 
@@ -38,6 +51,8 @@ void ABeachHeadMainWeapon::FireWeapon()
 	if (MyPawn->Controller == nullptr)
 		return;
 
+	if (!Cast<ABeachHeadPlayerController>(MyPawn->Controller))
+		return;
 	Cast<ABeachHeadPlayerController>(MyPawn->Controller)->GetPlayerViewPoint(CamLoc, CamRot);
 	const FVector TraceStart = CamLoc;
 	const FVector Direction = CamRot.Vector();

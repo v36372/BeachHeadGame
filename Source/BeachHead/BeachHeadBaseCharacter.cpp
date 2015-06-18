@@ -252,3 +252,14 @@ void ABeachHeadBaseCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ABeachHeadBaseCharacter, Health);
 	DOREPLIFETIME(ABeachHeadBaseCharacter, LastTakeHitInfo);
 }
+
+
+FRotator ABeachHeadBaseCharacter::GetCameraRotation()
+{
+	return BeachHeadCameraComponent->GetComponentRotation();
+}
+
+bool ABeachHeadBaseCharacter::CanFire()
+{
+	return IsAlive();
+}

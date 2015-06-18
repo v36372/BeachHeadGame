@@ -63,7 +63,7 @@ void ABulletProjectile::OnHit(AActor* OtherActor, UPrimitiveComponent* OtherComp
 
 	if (Cast<ABeachHeadAICharacter>(OtherActor))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("bi ban trung rui"));
+		UE_LOG(LogTemp, Warning, TEXT("ABulletProjectile bi ban trung rui"));
 		FPointDamageEvent PointDmg;
 		PointDmg.DamageTypeClass = DamageType;
 		PointDmg.HitInfo = Hit;

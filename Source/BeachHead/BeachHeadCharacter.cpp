@@ -194,13 +194,3 @@ void ABeachHeadCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& 
 	/* If we did not display the current inventory on the player mesh we could optimize replication by using this replication condition. */
 	/* DOREPLIFETIME_CONDITION(ASCharacter, Inventory, COND_OwnerOnly);*/
 }
-
-FRotator ABeachHeadCharacter::GetCameraRotation()
-{
-	return BeachHeadCameraComponent->GetComponentRotation();
-}
-
-bool ABeachHeadCharacter::CanFire()
-{
-	return IsAlive();
-}

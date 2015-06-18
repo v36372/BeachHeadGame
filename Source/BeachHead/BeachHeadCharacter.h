@@ -57,8 +57,6 @@ public:
 
 	bool ServerEquipWeapon_Validate(ABeachHeadWeapon* Weapon);
 
-	FRotator GetCameraRotation();
-	bool CanFire();
 	/*Max distance to use/focus on actors. */
 	UPROPERTY(EditDefaultsOnly, Category = "ObjectInteraction")
 	float MaxUseDistance;
@@ -87,12 +85,8 @@ private:
 	/*--------------------------------PRIVATE PROPERTIES-------------------------------------*/
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 	class USkeletalMeshComponent* Mesh1P;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* BeachHeadCameraComponent;
 
 	bool bWantsToFire;
-	float Health;
 	/*--------------------------------PRIVATE METHODS-------------------------------------*/
 	/* Mapped to input */
 	void OnStartFire();

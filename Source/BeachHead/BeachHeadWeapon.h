@@ -36,7 +36,7 @@ public:
 	// Called every frame
 	virtual void Tick( float DeltaSeconds ) override;
 
-	virtual void OnEnterInventory(ABeachHeadCharacter* NewOwner);
+	virtual void OnEnterInventory(ABeachHeadBaseCharacter* NewOwner);
 
 	FORCEINLINE EInventorySlot GetStorageSlot()
 	{
@@ -44,7 +44,7 @@ public:
 	}
 
 	/* Set the weapon's owning pawn */
-	void SetOwningPawn(ABeachHeadCharacter* NewOwner);
+	void SetOwningPawn(ABeachHeadBaseCharacter* NewOwner);
 
 	void OnEquip();
 	//virtual void OnUnEquip();
@@ -127,7 +127,7 @@ protected:
 	USkeletalMeshComponent* Mesh;
 
 	UPROPERTY(Transient, ReplicatedUsing = OnRep_MyPawn)
-	class ABeachHeadCharacter* MyPawn;
+	class ABeachHeadBaseCharacter* MyPawn;
 
 	virtual void FireWeapon()  PURE_VIRTUAL(ASWeapon::FireWeapon, );
 	//virtual void FireWeapon();

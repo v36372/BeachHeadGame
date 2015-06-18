@@ -3,6 +3,7 @@
 #pragma once
 
 #include "BeachHeadBaseCharacter.h"
+#include "BeachHeadWeapon.h"
 #include "BeachHeadAICharacter.generated.h"
 
 /**
@@ -73,4 +74,44 @@ public:
 	/* Change default bot type during gameplay */
 	void SetBotType(EBotBehaviorType NewType);
 	
+	UPROPERTY(EditDefaultsOnly, Category = Inventory)
+	TArray<TSubclassOf<class ABeachHeadWeapon>> DefaultInventoryClasses;
+
+	UPROPERTY(Transient, Replicated)
+	TArray<ABeachHeadWeapon*> Inventory;
+
+	void EquipWeapon(ABeachHeadWeapon* Weapon);
+
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerEquipWeapon(ABeachHeadWeapon* Weapon);
+
+	void ServerEquipWeapon_Implementation(ABeachHeadWeapon* Weapon);
+
+	bool ServerEquipWeapon_Validate(ABeachHeadWeapon* Weapon);
+
+
+	/* OnRep functions can use a parameter to hold the previous value of the variable. Very useful when you need to handle UnEquip etc. */
+	UFUNCTION()
+	void OnRep_CurrentWeapon(ABeachHeadWeapon* LastWeapon);
+
+	void SetCurrentWeapon(class ABeachHeadWeapon* newWeapon, class ABeachHeadWeapon* LastWeapon = nullptr);
+
+	void SpawnDefaultInventory();
+
+	void AddWeapon(class ABeachHeadWeapon* Weapon);
+	/*--------------------------------PUBLIC PROPERTIES-------------------------------------*/
+	UPROPERTY(Transient, ReplicatedUsing = OnRep_CurrentWeapon)
+	class ABeachHeadWeapon* CurrentWeapon;
+
+	class ABeachHeadWeapon* PreviousWeapon;
+
+	void OnStartFire();
+	bool bWantsToFire;
+	/* Mapped to input */
+	void OnStopFire();
+
+	void StartWeaponFire();
+
+	void StopWeaponFire();
+
 };

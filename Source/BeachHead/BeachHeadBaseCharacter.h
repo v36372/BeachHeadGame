@@ -184,5 +184,10 @@ protected:
 	void OnRep_LastTakeHitInfo();
 
 	bool bIsDying;
-	
+public :
+	FRotator GetCameraRotation();
+	bool CanFire();
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* BeachHeadCameraComponent;
 };

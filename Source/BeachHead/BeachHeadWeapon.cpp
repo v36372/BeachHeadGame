@@ -46,7 +46,7 @@ void ABeachHeadWeapon::Tick( float DeltaTime )
 
 }
 
-void ABeachHeadWeapon::OnEnterInventory(ABeachHeadCharacter* NewOwner)
+void ABeachHeadWeapon::OnEnterInventory(ABeachHeadBaseCharacter* NewOwner)
 {
 	SetOwningPawn(NewOwner);
 	//AttachMeshToPawn(StorageSlot);
@@ -73,7 +73,7 @@ UAudioComponent* ABeachHeadWeapon::PlayWeaponSound(USoundCue* SoundToPlay)
 	return AC;
 }
 
-void ABeachHeadWeapon::SetOwningPawn(ABeachHeadCharacter* NewOwner)
+void ABeachHeadWeapon::SetOwningPawn(ABeachHeadBaseCharacter* NewOwner)
 {
 	if (MyPawn != NewOwner)
 	{

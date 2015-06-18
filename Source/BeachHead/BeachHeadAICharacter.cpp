@@ -51,6 +51,7 @@ void ABeachHeadAICharacter::BeginPlay()
 	{
 		AIController->SetMoveToTarget(SensedPawn);
 		AIController->SetSelfActor(this);
+		SpawnDefaultInventory();
 	}
 }
 
@@ -117,3 +118,133 @@ void ABeachHeadAICharacter::SetBotType(EBotBehaviorType NewType)
 	}
 }
 
+void ABeachHeadAICharacter::OnStartFire()
+{
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadAICharacter::OnStartFire"));
+	StartWeaponFire();
+}
+
+void ABeachHeadAICharacter::OnStopFire()
+{
+	//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadAICharacter::OnStopFire"));
+	StopWeaponFire();
+}
+
+void ABeachHeadAICharacter::StartWeaponFire()
+{
+	if (!bWantsToFire)
+	{
+		bWantsToFire = true;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StartFire();
+			//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadAICharacter::StartWeaponFire"));
+		}
+	}
+}
+
+void ABeachHeadAICharacter::StopWeaponFire()
+{
+	if (bWantsToFire)
+	{
+		bWantsToFire = false;
+		if (CurrentWeapon)
+		{
+			CurrentWeapon->StopFire();
+			//GEngine->AddOnScreenDebugMessage(-1, -1, FColor::Red, TEXT("ABeachHeadAICharacter::StopWeaponFire"));
+		}
+	}
+}
+
+void ABeachHeadAICharacter::OnRep_CurrentWeapon(ABeachHeadWeapon* LastWeapon)
+{
+	SetCurrentWeapon(CurrentWeapon, LastWeapon);
+}
+
+void ABeachHeadAICharacter::SetCurrentWeapon(class ABeachHeadWeapon* NewWeapon, class ABeachHeadWeapon* LastWeapon)
+{
+	CurrentWeapon = NewWeapon;
+
+	if (NewWeapon)
+	{
+		NewWeapon->SetOwningPawn(this);
+		/* Only play equip animation when we already hold an item in hands */
+		NewWeapon->OnEquip();
+	}
+}
+
+void ABeachHeadAICharacter::SpawnDefaultInventory()
+{
+	if (Role < ROLE_Authority)
+	{
+		return;
+	}
+
+	for (int32 i = 0; i < DefaultInventoryClasses.Num(); i++)
+	{
+		if (DefaultInventoryClasses[i])
+		{
+			FActorSpawnParameters SpawnInfo;
+			SpawnInfo.bNoCollisionFail = true;
+			ABeachHeadWeapon* NewWeapon = GetWorld()->SpawnActor<ABeachHeadWeapon>(DefaultInventoryClasses[i], SpawnInfo);
+
+			AddWeapon(NewWeapon);
+		}
+	}
+}
+
+void ABeachHeadAICharacter::AddWeapon(class ABeachHeadWeapon* Weapon)
+{
+	if (Weapon && Role == ROLE_Authority)
+	{
+		Weapon->OnEnterInventory(this);
+		Inventory.AddUnique(Weapon);
+
+		// Equip first weapon in inventory
+		if (Inventory.Num() > 0 && CurrentWeapon == nullptr)
+		{
+			EquipWeapon(Inventory[0]);
+		}
+	}
+}
+
+void ABeachHeadAICharacter::EquipWeapon(ABeachHeadWeapon* Weapon)
+{
+	if (Weapon)
+	{
+		/* Ignore if trying to equip already equipped weapon */
+		if (Weapon == CurrentWeapon)
+			return;
+
+		if (Role == ROLE_Authority)
+		{
+			SetCurrentWeapon(Weapon, CurrentWeapon);
+		}
+		else
+		{
+			ServerEquipWeapon(Weapon);
+		}
+	}
+}
+
+
+bool ABeachHeadAICharacter::ServerEquipWeapon_Validate(ABeachHeadWeapon* Weapon)
+{
+	return true;
+}
+
+
+void ABeachHeadAICharacter::ServerEquipWeapon_Implementation(ABeachHeadWeapon* Weapon)
+{
+	EquipWeapon(Weapon);
+}
+
+void ABeachHeadAICharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABeachHeadCharacter, CurrentWeapon);
+	DOREPLIFETIME(ABeachHeadCharacter, Inventory);
+	/* If we did not display the current inventory on the player mesh we could optimize replication by using this replication condition. */
+	/* DOREPLIFETIME_CONDITION(ASCharacter, Inventory, COND_OwnerOnly);*/
+}
