@@ -30,6 +30,9 @@ ABeachHeadAICharacter::ABeachHeadAICharacter(const class FObjectInitializer& Obj
 	/* By default we will not let the AI patrol, we can override this value per-instance. */
 	BotType = EBotBehaviorType::Passive;
 	SenseTimeOut = 2.5f;
+
+	bIsSet = false;
+	bWantsToFire = false;
 	/* Note: Visual Setup is done in the AI/ZombieCharacter Blueprint file */
 }
 
@@ -45,14 +48,6 @@ void ABeachHeadAICharacter::BeginPlay()
 		PS->SetPlayerName("Bot");
 		PS->bIsABot = true;
 	}
-	ABeachHeadAIController* AIController = Cast<ABeachHeadAIController>(GetController());
-	ABeachHeadBaseCharacter* SensedPawn = Cast<ABeachHeadBaseCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn()); /// bull shit code
-	if (AIController && SensedPawn->IsAlive())
-	{
-		AIController->SetMoveToTarget(SensedPawn);
-		AIController->SetSelfActor(this);
-		SpawnDefaultInventory();
-	}
 }
 
 
@@ -60,7 +55,18 @@ void ABeachHeadAICharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 	/* Check if the last time we sensed a player is beyond the time out value to prevent bot from endlessly following a player. */
-	ABeachHeadAIController* AIController = Cast<ABeachHeadAIController>(GetController());
+	if (!bIsSet)
+	{
+		ABeachHeadAIController* AIController = Cast<ABeachHeadAIController>(GetController());
+		ABeachHeadBaseCharacter* SensedPawn = Cast<ABeachHeadBaseCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn()); /// bull shit code
+		if (AIController && SensedPawn->IsAlive())
+		{
+			AIController->SetMoveToTarget(SensedPawn);
+			AIController->SetSelfActor(this);
+			SpawnDefaultInventory();
+		}
+		bIsSet = true;
+	}
 }
 
 
@@ -132,6 +138,7 @@ void ABeachHeadAICharacter::OnStopFire()
 
 void ABeachHeadAICharacter::StartWeaponFire()
 {
+	bWantsToFire = false;
 	if (!bWantsToFire)
 	{
 		bWantsToFire = true;

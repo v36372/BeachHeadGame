@@ -55,6 +55,8 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Attacking")
 		float PunchDamage;
 
+	bool bIsSet;
+
 public:
 
 	ABeachHeadAICharacter(const class FObjectInitializer& ObjectInitializer);

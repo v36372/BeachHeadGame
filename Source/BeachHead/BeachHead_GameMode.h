@@ -55,6 +55,8 @@ class BEACHHEAD_API ABeachHead_GameMode : public AGameMode
 	UPROPERTY(EditDefaultsOnly, Category = "AI")
 	TSubclassOf<class APawn> BotPawnClass;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Number of Bots")
+	int32 MaxPawns;
 	/* Handle for nightly bot spawning */
 	FTimerHandle TimerHandle_BotSpawns;
 

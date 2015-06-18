@@ -20,7 +20,7 @@ EBTNodeResult::Type UUBTTask_Fire::ExecuteTask(UBehaviorTreeComponent& OwnerComp
 		return EBTNodeResult::Failed;
 	}
 
-	MyPawn->OnStartFire();
+	MyPawn->StartWeaponFire();
 
 	return EBTNodeResult::Succeeded;
 }

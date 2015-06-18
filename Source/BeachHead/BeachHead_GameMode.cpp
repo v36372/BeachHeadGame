@@ -7,7 +7,7 @@
 #include "BeachHeadGameState.h"
 #include "BeachHeadPlayerState.h"
 #include "BeachHead_GameMode.h"
-
+#include "BeachHeadPlayerStart.h"
 
 /* Define a log category for error messages */
 DEFINE_LOG_CATEGORY_STATIC(LogGameMode, Log, All);
@@ -208,21 +208,89 @@ bool ABeachHead_GameMode::ShouldSpawnAtStartSpot(AController* Player)
 
 AActor* ABeachHead_GameMode::ChoosePlayerStart(AController* Player)
 {
-	return Super::ChoosePlayerStart(Player);
+	TArray<APlayerStart*> PreferredSpawns;
+	TArray<APlayerStart*> FallbackSpawns;
+
+	for (int32 i = 0; i < PlayerStarts.Num(); i++)
+	{
+		APlayerStart* TestStart = PlayerStarts[i];
+		if (IsSpawnpointAllowed(TestStart, Player))
+		{
+			if (IsSpawnpointPreferred(TestStart, Player))
+			{
+				PreferredSpawns.Add(TestStart);
+			}
+			else
+			{
+				FallbackSpawns.Add(TestStart);
+			}
+		}
+	}
+
+	APlayerStart* BestStart = nullptr;
+	if (PreferredSpawns.Num() > 0)
+	{
+		BestStart = PreferredSpawns[FMath::RandHelper(PreferredSpawns.Num())];
+	}
+	else if (FallbackSpawns.Num() > 0)
+	{
+		BestStart = FallbackSpawns[FMath::RandHelper(FallbackSpawns.Num())];
+	}
+
+	return BestStart ? BestStart : Super::ChoosePlayerStart(Player);
 }
 
 
 bool ABeachHead_GameMode::IsSpawnpointAllowed(APlayerStart* SpawnPoint, AController* Controller)
 {
+	if (Controller == nullptr || Controller->PlayerState == nullptr)
+		return true;
+
+	/* Check for extended playerstart class */
+	ABeachHeadPlayerStart* MyPlayerStart = Cast<ABeachHeadPlayerStart>(SpawnPoint);
+	if (MyPlayerStart)
+	{
+		return MyPlayerStart->GetIsPlayerOnly() && !Controller->PlayerState->bIsABot;
+	}
+
+	/* Cast failed, Anyone can spawn at the base playerstart class */
 	return true;
 }
 
 
 bool ABeachHead_GameMode::IsSpawnpointPreferred(APlayerStart* SpawnPoint, AController* Controller)
 {
-	return true;
-}
+	if (SpawnPoint)
+	{
+		/* Iterate all pawns to check for collision overlaps with the spawn point */
+		const FVector SpawnLocation = SpawnPoint->GetActorLocation();
+		for (FConstPawnIterator It = GetWorld()->GetPawnIterator(); It; It++)
+		{
+			ACharacter* OtherPawn = Cast<ACharacter>(*It);
+			if (OtherPawn)
+			{
+				const float CombinedHeight = (SpawnPoint->GetCapsuleComponent()->GetScaledCapsuleHalfHeight() + OtherPawn->GetCapsuleComponent()->GetScaledCapsuleHalfHeight()) * 2.0f;
+				const float CombinedWidth = SpawnPoint->GetCapsuleComponent()->GetScaledCapsuleRadius() + OtherPawn->GetCapsuleComponent()->GetScaledCapsuleRadius();
+				const FVector OtherLocation = OtherPawn->GetActorLocation();
 
+				// Check if player overlaps the playerstart
+				if (FMath::Abs(SpawnLocation.Z - OtherLocation.Z) < CombinedHeight && (SpawnLocation - OtherLocation).Size2D() < CombinedWidth)
+				{
+					return false;
+				}
+			}
+		}
+
+		/* Check if spawnpoint is exclusive to players */
+		ABeachHeadPlayerStart* MyPlayerStart = Cast<ABeachHeadPlayerStart>(SpawnPoint);
+		if (MyPlayerStart)
+		{
+			return MyPlayerStart->GetIsPlayerOnly() && !Controller->PlayerState->bIsABot;
+		}
+	}
+
+	return false;
+}
 
 void ABeachHead_GameMode::SpawnNewBot()
 {
@@ -272,10 +340,9 @@ void ABeachHead_GameMode::SpawnBotHandler()
 		if (MyGameState->GetIsNight())
 		{
 			/* This could be any dynamic number based on difficulty (eg. increasing after having survived a few nights) */
-			const int32 MaxPawns = 2;
 
 			/* Check number of available pawns (players included) */
-			if (GetWorld()->GetNumPawns() < MaxPawns)
+			if (GetWorld()->GetNumPawns() < MaxPawns+1)
 			{
 				SpawnNewBot();
 			}
