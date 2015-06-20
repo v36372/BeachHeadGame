@@ -263,3 +263,8 @@ bool ABeachHeadBaseCharacter::CanFire()
 {
 	return IsAlive();
 }
+
+bool ABeachHeadBaseCharacter::CanReload()
+{
+	return IsAlive();
+}

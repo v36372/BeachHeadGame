@@ -50,6 +50,7 @@ public:
 	//virtual void OnUnEquip();
 
 	bool CanFire();
+	bool CanReload();
 private:
 	UFUNCTION()
 	void OnRep_BurstCounter();
@@ -149,4 +150,92 @@ protected:
 	/** Gun muzzle's offset from the characters location */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	FVector GunOffset;
+
+	UPROPERTY(Transient, Replicated)
+		int32 CurrentAmmo;
+
+	UPROPERTY(Transient, Replicated)
+		int32 CurrentAmmoInClip;
+
+	/* Weapon ammo on spawn */
+	UPROPERTY(EditDefaultsOnly)
+		int32 StartAmmo;
+
+	UPROPERTY(EditDefaultsOnly)
+		int32 MaxAmmo;
+
+	UPROPERTY(EditDefaultsOnly)
+		int32 MaxAmmoPerClip;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundCue* ReloadSound;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		UAnimMontage* ReloadAnim;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		USoundCue* OutOfAmmoSound;
+	virtual void ReloadWeapon();
+
+	/* Trigger reload from server */
+	UFUNCTION(Reliable, Client)
+		void ClientStartReload();
+
+	void ClientStartReload_Implementation();
+
+	void UseAmmo();
+
+	bool bPendingReload;
+
+	UFUNCTION()
+		void OnRep_Reload();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerStartReload();
+
+	void ServerStartReload_Implementation();
+
+	bool ServerStartReload_Validate();
+
+	UFUNCTION(reliable, server, WithValidation)
+		void ServerStopReload();
+
+	void ServerStopReload_Implementation();
+
+	bool ServerStopReload_Validate();
+
+	virtual void StartReload(bool bFromReplication = false);
+	virtual void StopSimulateReload();
+
+	float PlayWeaponAnimation(UAnimMontage* Animation, float InPlayRate = 1.f, FName StartSectionName = NAME_None);
+	void StopWeaponAnimation(UAnimMontage* Animation);
+	FTimerHandle TimerHandle_ReloadWeapon;
+
+	FTimerHandle TimerHandle_StopReload;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		float NoAnimReloadDuration;
+
+	/* Time to assign on equip when no animation is found */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+		float NoEquipAnimDuration;
+
+	int32 GiveAmmo(int32 AddAmount);
+
+	/* Set a new total amount of ammo of weapon */
+	void SetAmmoCount(int32 NewTotalAmount);
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetCurrentAmmo() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetCurrentAmmoInClip() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetMaxAmmoPerClip() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Ammo")
+		int32 GetMaxAmmo() const;
+
+	void StopSimulatingWeaponFire();
 };

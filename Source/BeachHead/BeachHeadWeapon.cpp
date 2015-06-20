@@ -30,6 +30,11 @@ ABeachHeadWeapon::ABeachHeadWeapon(const class FObjectInitializer& PCIP)
 
 	MuzzleAttachPoint = TEXT("MuzzleFlashSocket");
 
+	StartAmmo = 999;
+	MaxAmmo = 999;
+	MaxAmmoPerClip = 30;
+	NoAnimReloadDuration = 1.5f;
+	NoEquipAnimDuration = 0.5f;
 }
 
 // Called when the game starts or when spawned
@@ -116,6 +121,11 @@ void ABeachHeadWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ABeachHeadWeapon, MyPawn);
+
+	DOREPLIFETIME_CONDITION(ABeachHeadWeapon, CurrentAmmo, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ABeachHeadWeapon, CurrentAmmoInClip, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(ABeachHeadWeapon, BurstCounter, COND_SkipOwner);
+	DOREPLIFETIME_CONDITION(ABeachHeadWeapon, bPendingReload, COND_SkipOwner);
 }
 
 bool ABeachHeadWeapon::ServerHandleFiring_Validate()
@@ -159,7 +169,7 @@ void ABeachHeadWeapon::DetermineWeaponState()
 
 	if (bIsEquipped)
 	{
-		/*if (bPendingReload)
+		if (bPendingReload)
 		{
 			if (CanReload())
 			{
@@ -170,7 +180,7 @@ void ABeachHeadWeapon::DetermineWeaponState()
 				NewState = CurrentState;
 			}
 		}
-		else*/
+		else
 		if (bWantsToFire && CanFire())
 		{
 			NewState = EWeaponState::Firing;
@@ -232,6 +242,9 @@ void ABeachHeadWeapon::PostInitializeComponents()
 
 	/* Setup configuration */
 	TimeBetweenShots = 60.0f / ShotsPerMinute;
+	TimeBetweenShots = 60.0f / ShotsPerMinute;
+	CurrentAmmo = FMath::Min(StartAmmo, MaxAmmo);
+	CurrentAmmoInClip = FMath::Min(MaxAmmoPerClip, StartAmmo);
 }
 
 void ABeachHeadWeapon::OnBurstStarted()
@@ -265,6 +278,11 @@ void ABeachHeadWeapon::OnBurstFinished()
 	bRefiring = false;
 }
 
+void ABeachHeadWeapon::StopSimulatingWeaponFire()
+{
+	
+}
+
 void ABeachHeadWeapon::OnRep_BurstCounter()
 {
 	if (BurstCounter > 0)
@@ -277,9 +295,41 @@ void ABeachHeadWeapon::OnRep_BurstCounter()
 	}
 }
 
+bool ABeachHeadWeapon::CanReload()
+{
+	bool bCanReload = (!MyPawn || MyPawn->CanReload());
+	bool bGotAmmo = (CurrentAmmoInClip < MaxAmmoPerClip) && ((CurrentAmmo - CurrentAmmoInClip) > 0);
+	bool bStateOKToReload = ((CurrentState == EWeaponState::Idle) || (CurrentState == EWeaponState::Firing));
+	return (bCanReload && bGotAmmo && bStateOKToReload);
+}
+
+
+int32 ABeachHeadWeapon::GetCurrentAmmo() const
+{
+	return CurrentAmmo;
+}
+
+
+int32 ABeachHeadWeapon::GetCurrentAmmoInClip() const
+{
+	return CurrentAmmoInClip;
+}
+
+
+int32 ABeachHeadWeapon::GetMaxAmmoPerClip() const
+{
+	return MaxAmmoPerClip;
+}
+
+
+int32 ABeachHeadWeapon::GetMaxAmmo() const
+{
+	return MaxAmmo;
+}
+
 void ABeachHeadWeapon::HandleFiring()
 {
-	if (CanFire())
+	if (CurrentAmmoInClip > 0 && CanFire())
 	{
 		if (GetNetMode() != NM_DedicatedServer)
 		{
@@ -289,27 +339,27 @@ void ABeachHeadWeapon::HandleFiring()
 		if (MyPawn && MyPawn->IsLocallyControlled())
 		{
 			FireWeapon();
-
+			UseAmmo();
 			// Update firing FX on remote clients if this is called on server
-			//BurstCounter++;
+			BurstCounter++;
 		}
 	}
-	/*else if (CanReload())
+	else if (CanReload())
 	{
 		StartReload();
-	}*/
+	}
 	else if (MyPawn && MyPawn->IsLocallyControlled())
 	{
-		//if (GetCurrentAmmo() == 0 && !bRefiring)
-		//{
-		//	PlayWeaponSound(OutOfAmmoSound);
-		//}
+		if (GetCurrentAmmo() == 0 && !bRefiring)
+		{
+			PlayWeaponSound(OutOfAmmoSound);
+		}
 
-		///* Reload after firing last round */
-		//if (CurrentAmmoInClip <= 0 && CanReload())
-		//{
-		//	StartReload();
-		//}
+		/* Reload after firing last round */
+		if (CurrentAmmoInClip <= 0 && CanReload())
+		{
+			StartReload();
+		}
 
 		/* Stop weapon fire FX, but stay in firing state */
 		if (BurstCounter > 0)
@@ -336,9 +386,139 @@ void ABeachHeadWeapon::HandleFiring()
 	LastFireTime = GetWorld()->GetTimeSeconds();
 }
 
+void ABeachHeadWeapon::StartReload(bool bFromReplication)
+{
+	/* Push the request to server */
+	if (!bFromReplication && Role < ROLE_Authority)
+	{
+		ServerStartReload();
+	}
+
+	/* If local execute requested or we are running on the server */
+	if (bFromReplication || CanReload())
+	{
+		bPendingReload = true;
+		DetermineWeaponState();
+
+		float AnimDuration = PlayWeaponAnimation(ReloadAnim);
+		if (AnimDuration <= 0.0f)
+		{
+			AnimDuration = NoAnimReloadDuration;
+		}
+		
+		GetWorldTimerManager().SetTimer(TimerHandle_StopReload, this, &ABeachHeadWeapon::StopSimulateReload, AnimDuration, false);
+		if (Role == ROLE_Authority)
+		{
+			GetWorldTimerManager().SetTimer(TimerHandle_ReloadWeapon, this, &ABeachHeadWeapon::ReloadWeapon, FMath::Max(0.1f, AnimDuration - 0.1f), false);
+		}
+
+		if (MyPawn && MyPawn->IsLocallyControlled())
+		{
+			PlayWeaponSound(ReloadSound);
+		}
+	}
+}
+
+
+void ABeachHeadWeapon::ReloadWeapon()
+{
+	int32 ClipDelta = FMath::Min(MaxAmmoPerClip - CurrentAmmoInClip, CurrentAmmo - CurrentAmmoInClip);
+
+	if (ClipDelta > 0)
+	{
+		CurrentAmmoInClip += ClipDelta;
+	}
+}
+
+void ABeachHeadWeapon::OnRep_Reload()
+{
+	if (bPendingReload)
+	{
+		/* By passing true we do not push back to server and execute it locally */
+		StartReload(true);
+	}
+	else
+	{
+		StopSimulateReload();
+	}
+}
+
+void ABeachHeadWeapon::StopSimulateReload()
+{
+	if (CurrentState == EWeaponState::Reloading)
+	{
+		bPendingReload = false;
+		DetermineWeaponState();
+		StopWeaponAnimation(ReloadAnim);
+	}
+}
+
+void ABeachHeadWeapon::StopWeaponAnimation(UAnimMontage* Animation)
+{
+	if (MyPawn)
+	{
+		if (Animation)
+		{
+			MyPawn->StopAnimMontage(Animation);
+		}
+	}
+}
+
+float ABeachHeadWeapon::PlayWeaponAnimation(UAnimMontage* Animation, float InPlayRate, FName StartSectionName)
+{
+	float Duration = 0.0f;
+	if (MyPawn)
+	{
+		if (Animation)
+		{
+			Duration = MyPawn->PlayAnimMontage(Animation, InPlayRate, StartSectionName);
+		}
+	}
+
+	return Duration;
+}
+
+void ABeachHeadWeapon::ServerStartReload_Implementation()
+{
+	StartReload();
+}
+
+
+bool ABeachHeadWeapon::ServerStartReload_Validate()
+{
+	return true;
+}
+
+
+void ABeachHeadWeapon::ServerStopReload_Implementation()
+{
+	StopSimulateReload();
+}
+
+
+bool ABeachHeadWeapon::ServerStopReload_Validate()
+{
+	return true;
+}
+
+
+void ABeachHeadWeapon::ClientStartReload_Implementation()
+{
+	StartReload();
+}
+
+void ABeachHeadWeapon::UseAmmo()
+{
+	CurrentAmmoInClip--;
+	CurrentAmmo--;
+}
+
+
 bool ABeachHeadWeapon::CanFire()
 {
-	return MyPawn->CanFire();
+	bool bPawnCanFire = MyPawn && MyPawn->CanFire();
+	bool bStateOK = CurrentState == EWeaponState::Idle || CurrentState == EWeaponState::Firing;
+	return bPawnCanFire && bStateOK && !bPendingReload;
 }
 
 FVector ABeachHeadWeapon::GetAdjustedAim() const

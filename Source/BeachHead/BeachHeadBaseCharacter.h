@@ -188,6 +188,8 @@ public :
 	FRotator GetCameraRotation();
 	bool CanFire();
 
+	bool CanReload();
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* BeachHeadCameraComponent;
 };
