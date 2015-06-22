@@ -112,8 +112,8 @@ public:
 	/* Mapped to input */
 	void OnStopFire();
 
-	void StartWeaponFire();
+	void StartWeaponFire() override;
 
-	void StopWeaponFire();
+	void StopWeaponFire() override;
 
 };

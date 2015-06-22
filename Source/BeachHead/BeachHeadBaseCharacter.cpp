@@ -268,3 +268,13 @@ bool ABeachHeadBaseCharacter::CanReload()
 {
 	return IsAlive();
 }
+
+void ABeachHeadBaseCharacter::StartWeaponFire()
+{
+	
+}
+
+void ABeachHeadBaseCharacter::StopWeaponFire()
+{
+	
+}

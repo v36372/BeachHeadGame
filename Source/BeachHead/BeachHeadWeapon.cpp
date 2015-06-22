@@ -155,7 +155,7 @@ void ABeachHeadWeapon::StartFire()
 	{
 		ServerStartFire();
 	}
-
+	bWantsToFire = false;
 	if (!bWantsToFire)
 	{
 		bWantsToFire = true;
@@ -346,6 +346,7 @@ void ABeachHeadWeapon::HandleFiring()
 	}
 	else if (CanReload())
 	{
+
 		StartReload();
 	}
 	else if (MyPawn && MyPawn->IsLocallyControlled())
@@ -397,6 +398,9 @@ void ABeachHeadWeapon::StartReload(bool bFromReplication)
 	/* If local execute requested or we are running on the server */
 	if (bFromReplication || CanReload())
 	{
+		MyPawn->StopWeaponFire();
+		StopFire();
+
 		bPendingReload = true;
 		DetermineWeaponState();
 
