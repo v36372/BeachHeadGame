@@ -46,7 +46,7 @@ void ABeachHeadAICharacter::BeginPlay()
 	if (PS)
 	{
 		PS->SetPlayerName("Bot");
-		PS->bIsABot = true;
+		PS->bIsABot = 1;
 	}
 }
 

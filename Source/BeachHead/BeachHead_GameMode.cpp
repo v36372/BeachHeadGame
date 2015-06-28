@@ -8,6 +8,10 @@
 #include "BeachHeadPlayerState.h"
 #include "BeachHead_GameMode.h"
 #include "BeachHeadPlayerStart.h"
+#include "BeachHeadFlyingPlayerStart.h"
+#include "BeachHeadFlyingPawn.h"
+#include "BeachHeadFlyingAIController.h"
+#include <time.h>
 
 /* Define a log category for error messages */
 DEFINE_LOG_CATEGORY_STATIC(LogGameMode, Log, All);
@@ -247,6 +251,12 @@ bool ABeachHead_GameMode::IsSpawnpointAllowed(APlayerStart* SpawnPoint, AControl
 		return true;
 
 	/* Check for extended playerstart class */
+	ABeachHeadFlyingPlayerStart* FlyingPlayerStart = Cast<ABeachHeadFlyingPlayerStart>(SpawnPoint);
+	if (FlyingPlayerStart)
+	{
+		return Cast<ABeachHeadFlyingAIController>(Controller) != nullptr;
+	}
+
 	ABeachHeadPlayerStart* MyPlayerStart = Cast<ABeachHeadPlayerStart>(SpawnPoint);
 	if (MyPlayerStart)
 	{
@@ -306,7 +316,7 @@ UClass* ABeachHead_GameMode::GetDefaultPawnClassForController(AController* InCon
 {
 	if (Cast<ABeachHeadAIController>(InController))
 	{
-		return BotPawnClass;
+			return BotPawnFlyingClass;
 	}
 
 	return Super::GetDefaultPawnClassForController(InController);

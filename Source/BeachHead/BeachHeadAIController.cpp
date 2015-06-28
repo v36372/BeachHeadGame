@@ -116,3 +116,23 @@ ABeachHeadBaseCharacter* ABeachHeadAIController::GetSelfActor()
 
 	return nullptr;
 }
+
+FVector ABeachHeadAIController::GetTargetLocation()
+{ 
+	if (BlackboardComp)
+	{
+		return BlackboardComp->GetValueAsVector(TargetLocationKeyName);
+	}
+
+	return FVector(0,0,0);
+}
+
+FVector ABeachHeadAIController::GetSelfLocation()
+{
+	if (BlackboardComp)
+	{
+		return BlackboardComp->GetValueAsVector(SelfLocationKeyName);
+	}
+
+	return FVector(0, 0, 0);
+}

@@ -14,6 +14,7 @@ class BEACHHEAD_API ABeachHeadAIController : public AAIController
 {
 	GENERATED_BODY()
 	
+public:
 	ABeachHeadAIController(const class FObjectInitializer& ObjectInitializer);
 
 	/* Called whenever the controller possesses a character bot */
@@ -44,6 +45,9 @@ public:
 
 	ABeachHeadBaseCharacter* GetTargetEnemy();
 	ABeachHeadBaseCharacter* GetSelfActor();
+	FVector GetTargetLocation();
+	FVector GetSelfLocation();
+
 
 	void SetMoveToTarget(APawn* Pawn);
 

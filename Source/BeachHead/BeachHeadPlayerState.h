@@ -27,6 +27,7 @@ class BEACHHEAD_API ABeachHeadPlayerState : public APlayerState
 	virtual void Reset() override;
 
 public:
+	bool bIsFlyingBot;
 
 	void AddKill();
 
