@@ -17,11 +17,12 @@ class BEACHHEAD_API ABeachHeadFlyingPlayerStart : public APlayerStart
 
 	/* Is only useable by players - automatically a preferred spawn for players */
 	UPROPERTY(EditAnywhere, Category = "PlayerStart")
-		bool bFlyingOnly;
+	bool bFlyingOnly;
+
+
 
 public:
 
 	bool GetIsFlyingOnly() { return bFlyingOnly; }
-	
 	
 };

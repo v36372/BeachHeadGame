@@ -251,11 +251,17 @@ bool ABeachHead_GameMode::IsSpawnpointAllowed(APlayerStart* SpawnPoint, AControl
 		return true;
 
 	/* Check for extended playerstart class */
-	ABeachHeadFlyingPlayerStart* FlyingPlayerStart = Cast<ABeachHeadFlyingPlayerStart>(SpawnPoint);
-	if (FlyingPlayerStart)
+	if (Type == currentSpawnType::FlyingBot)
 	{
-		return Cast<ABeachHeadFlyingAIController>(Controller) != nullptr;
+		ABeachHeadFlyingPlayerStart* FlyingPlayerStart = Cast<ABeachHeadFlyingPlayerStart>(SpawnPoint);
+		if (FlyingPlayerStart)
+			return true;
+		else
+			return false;
 	}
+	else
+	if (Cast<ABeachHeadFlyingPlayerStart>(SpawnPoint))
+		return false;
 
 	ABeachHeadPlayerStart* MyPlayerStart = Cast<ABeachHeadPlayerStart>(SpawnPoint);
 	if (MyPlayerStart)
@@ -307,6 +313,14 @@ void ABeachHead_GameMode::SpawnNewBot()
 	FActorSpawnParameters SpawnInfo;
 	SpawnInfo.bNoCollisionFail = true;
 
+	srand(time(NULL));
+
+	/* generate secret number between 1 and 10: */
+	if (rand() % 2 == 0)
+		Type = currentSpawnType::FlyingBot;
+	else
+		Type = currentSpawnType::NormalBot;
+
 	ABeachHeadAIController* AIC = GetWorld()->SpawnActor<ABeachHeadAIController>(SpawnInfo);
 	RestartPlayer(AIC);
 }
@@ -316,7 +330,10 @@ UClass* ABeachHead_GameMode::GetDefaultPawnClassForController(AController* InCon
 {
 	if (Cast<ABeachHeadAIController>(InController))
 	{
+		if (Type == currentSpawnType::FlyingBot)
 			return BotPawnFlyingClass;
+		else
+			return BotPawnClass;
 	}
 
 	return Super::GetDefaultPawnClassForController(InController);

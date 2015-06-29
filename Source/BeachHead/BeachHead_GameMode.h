@@ -13,6 +13,15 @@ class BEACHHEAD_API ABeachHead_GameMode : public AGameMode
 {
 	GENERATED_BODY()
 
+	enum currentSpawnType
+	{
+		Player =0,
+		NormalBot,
+		FlyingBot
+	};
+
+	currentSpawnType Type;
+
 	ABeachHead_GameMode(const FObjectInitializer& ObjectInitializer);
 
 	virtual void InitGameState();
